@@ -1,10 +1,10 @@
 # simple-image-classifier
-Simple image classifier using PyTorch
-
-I am following the PyTorch tutorial to build a simple image classifier.
-In addition, I will be implementing a few additions to the base tutorial found at:
+The goal of this project is to become more familiar with PyTorch by building a 
+simple image classifier closely following the tutorial found at:
 https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html#sphx-glr-beginner-blitz-cifar10-tutorial-py
 
-Specifically, the following functionalities have been added:
+In addition to the code provided in the tutorial, I have added the following 
+functionalities:
 
 1.) custom loss class that allows for easy visualization of training loss
+2.) Training is over 10 epochs

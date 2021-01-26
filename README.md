@@ -7,4 +7,5 @@ In addition to the code provided in the tutorial, I have added the following
 functionalities:
 
 1.) custom loss class that allows for easy visualization of training loss
+
 2.) Training is over 10 epochs

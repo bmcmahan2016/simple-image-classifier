@@ -13,9 +13,9 @@ in the tutorial along with a list of things I have succesfully added.
 
 Additions I have made to the code provided in the tutorial:
 -custom loss allows for easy plotting of loss history after training
+-increased to train for 10 epochs
 
 Future work for project:
-TODO: see if training longer improves performance
 TODO: move network on to GPU
 TODO: get above 75% accuracy accross all classes
 TODO: investigate more units
@@ -176,7 +176,7 @@ optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 ##############################
 # STEP 4: TRAIN NETWORK
 ##############################
-NUM_EPOCHS = 5
+NUM_EPOCHS = 10
 for epoch in range(NUM_EPOCHS):  # loop over the dataset multiple times
 
     running_loss = 0.0

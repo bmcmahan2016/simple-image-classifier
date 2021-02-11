@@ -9,3 +9,6 @@ functionalities:
 1.) custom loss class that allows for easy visualization of training loss
 
 2.) Training is over 10 epochs
+
+The training_a_classifier.py script will train the classifier on the Places365 dataset
+The test_clf.py scrtipt will test an already trained and save classifier on the Places365 dataset

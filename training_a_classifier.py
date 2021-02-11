@@ -14,16 +14,18 @@ in the tutorial along with a list of things I have succesfully added.
 Additions I have made to the code provided in the tutorial:
 -custom loss allows for easy plotting of loss history after training
 -increased to train for 10 epochs
+-network moved to GPU
 
 Future work for project:
-TODO: move network on to GPU
 TODO: get above 75% accuracy accross all classes
 TODO: investigate more units
 TODO: for a given number of units compare effect of depth on performance
 TODO: try a different activation function
 TODO: try using a learning rate schedule
-TODO: try training on ImageNet dataset
+TODO: try training on Places365 dataset
+TODO: Allow user to pass in an image and classify it
 """
+
 import torch
 import torchvision
 import torchvision.transforms as transforms
@@ -32,23 +34,35 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import time
+
+USE_GPU = True
+if USE_GPU:
+    device = torch.device("cuda:0")
+else:
+    device = torch.device("cpu")
 
 ##############################
 # STEP 1: LOAD DATA
 ##############################
 transform = transforms.Compose(
     [transforms.ToTensor(),
-     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+     transforms.CenterCrop((300,300)),      # crop the image 
+     transforms.Resize((300,300))])         # ensure image is at least 300x300
 
-trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
-                                        download=True, transform=transform)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
+trainset = torchvision.datasets.Places365(root='D:\PyTorch\p0', split='train-standard',
+                                        download=False, transform=transform)
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=50,
                                           shuffle=True, num_workers=0)
 
-testset = torchvision.datasets.CIFAR10(root='./data', train=False,
-                                       download=True, transform=transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=4,
+
+testset = torchvision.datasets.Places365(root='D:\PyTorch\p0', split='val',
+                                       download=False, transform=transform)
+testloader = torch.utils.data.DataLoader(testset, batch_size=10,
                                          shuffle=False, num_workers=0)
+
+
 
 classes = ('plane', 'car', 'bird', 'cat',
            'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
@@ -103,12 +117,12 @@ class Net(nn.Module):
     '''
     def __init__(self):
         super().__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+        self.conv1 = nn.Conv2d(3, 60, 5)  # in channels, out channels, kernel_size  (1, 3, 500, 500)
+        self.pool = nn.MaxPool2d(2, 2)                  #
+        self.conv2 = nn.Conv2d(60, 16, 5)               #
+        self.fc1 = nn.Linear(16 * 72 * 72, 1000)           
+        self.fc2 = nn.Linear(1000, 500)
+        self.fc3 = nn.Linear(500, 500)
 
     def forward(self, x):
         '''
@@ -124,17 +138,18 @@ class Net(nn.Module):
         x : TYPE
             DESCRIPTION.
 
-        '''
-        x = self.pool(F.relu(self.conv1(x)))
-        x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, 16 * 5 * 5)
-        x = F.relu(self.fc1(x))
+        '''                                          # shape prior to executing line
+        x = self.pool(F.relu(self.conv1(x)))         # 1,3,300,300
+        x = self.pool(F.relu(self.conv2(x)))         # 1, 60, 148, 148
+        x = x.view(-1, 16 * 72 * 72)                   # 1, 16, 72, 72
+        x = F.relu(self.fc1(x))                  
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
 
 
 net = Net()
+net.to(device)
 ##############################
 # STEP 3: DEFINE LOSS
 ##############################
@@ -176,11 +191,15 @@ optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 ##############################
 # STEP 4: TRAIN NETWORK
 ##############################
-NUM_EPOCHS = 10
+training_start_time = time.time()
+NUM_EPOCHS = 1
 for epoch in range(NUM_EPOCHS):  # loop over the dataset multiple times
 
     running_loss = 0.0
     for i, (inputs, labels) in enumerate(trainloader, 0):
+        inputs=inputs.to(device)
+        labels=labels.to(device)
+        print(i)
 
         # zero the parameter gradients
         optimizer.zero_grad()
@@ -193,12 +212,15 @@ for epoch in range(NUM_EPOCHS):  # loop over the dataset multiple times
 
         # print statistics
         running_loss += loss.item()
-        if i % 2000 == 1999:    # print every 2000 mini-batches
-            print('[%d, %5d] loss: %.3f' %
+        if i % 10 == 9:    # print every 2000 mini-batches
+            print('epoch# %d, iteration# %5d, loss: %.3f' %
                   (epoch + 1, i + 1, running_loss / 2000))
             running_loss = 0.0
 
+training_end_time = time.time()
+training_time = training_end_time - training_start_time
 print('Finished Training')
+print('Training time: (min)', training_time/60.)
 criterion.plot()
 
 PATH = './cifar_net.pth'
